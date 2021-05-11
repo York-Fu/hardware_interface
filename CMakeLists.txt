@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(hardward_interface)
+project(motion_interface)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
+set(CMAKE_BUILD_TYPE Release)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -17,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(Eigen3 REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -105,8 +107,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES hardward_interface
+ INCLUDE_DIRS include
+ LIBRARIES motion_interface
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
@@ -118,29 +120,41 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}/include/hardward_interface/
-  ${catkin_INCLUDE_DIRS}/platform/emptyRobot/
-  ${catkin_INCLUDE_DIRS}/platform/roban/
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/motion_interface/
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/platform/vrep
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/platform/roban/
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/hardward_interface.cpp
-# )
+aux_source_directory(./include/platform/vrep/ DIR_VREP)
+aux_source_directory(./include/platform/roban/ DIR_ROBAN)
+add_library(${PROJECT_NAME}
+  src/motionInterface.cpp
+  ${DIR_VREP}
+  ${DIR_ROBAN}
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+  yaml-cpp
+)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-aux_source_directory(./src SRC_DIRS)
-aux_source_directory(./platform/emptyRobot SRC_DIRS)
-aux_source_directory(./platform/roban SRC_DIRS)
-add_executable(${PROJECT_NAME}_node ${SRC_DIRS})
+aux_source_directory(./src DIR_SRCS)
+aux_source_directory(./include/platform/vrep/ DIR_SRCS)
+aux_source_directory(./include/platform/roban/ DIR_SRCS)
+add_executable(${PROJECT_NAME}_example_node ${DIR_SRCS})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -153,7 +167,7 @@ add_executable(${PROJECT_NAME}_node ${SRC_DIRS})
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}_node
+target_link_libraries(${PROJECT_NAME}_example_node
   ${catkin_LIBRARIES}
   yaml-cpp
 )
@@ -205,7 +219,7 @@ target_link_libraries(${PROJECT_NAME}_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_hardward_interface.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_motion_interface.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
